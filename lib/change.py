@@ -84,7 +84,9 @@ def transition_image(aoi: AOI, out_png: str, tr: Optional[np.ndarray] = None) ->
                for i in range(len(CLASSES))]
     ax.legend(handles=handles, loc="lower right", fontsize=7, framealpha=0.85)
     fig.tight_layout()
-    os.makedirs(os.path.dirname(out_png), os.path) if os.path.dirname(out_png) else None
+    d = os.path.dirname(out_png)
+    if d:
+        os.makedirs(d, exist_ok=True)
     fig.savefig(out_png, dpi=110)
     plt.close(fig)
     return True

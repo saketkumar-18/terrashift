@@ -27,6 +27,10 @@ def stage_composites(aois, epochs):
     print("== Stage 1: composites ==")
     for aoi in aois:
         for ek in epochs:
+            out = os.path.join(stac_io.DERIVED_DIR, f"{aoi.id}_{ek}.npz")
+            if os.path.exists(out):
+                print(f"  {aoi.id}/{ek}: cached composite present, skip fetch")
+                continue
             for attempt in range(3):
                 t0 = time.time()
                 try:
@@ -54,7 +58,12 @@ def stage_labels(aois):
 
 def stage_train(aois):
     print("== Stage 3: train/eval ==")
-    return model_mod.train_eval(aois)
+    metrics = model_mod.train_eval(aois)
+    if metrics is not None:
+        # ship metrics with the API bundle (models/ is not deployed)
+        with open(os.path.join(API_DATA, "metrics.json"), "w") as fh:
+            json.dump(metrics, fh, indent=2)
+    return metrics
 
 
 def stage_predict(aois):

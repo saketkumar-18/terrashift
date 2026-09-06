@@ -1,0 +1,46 @@
+== Stage 1: composites ==
+  ncr-gurugram/2019: cached composite present, skip fetch
+  [ncr-gurugram/2021] skip S2A_43RFM_20210310_2_L2A (unusable)
+  [ncr-gurugram/2021] composite ok: 11 scenes, usable px=230400/230400
+  ncr-gurugram/2021: ok in 126s
+  ncr-gurugram/2026: cached composite present, skip fetch
+  papum-pare/2019: cached composite present, skip fetch
+  [papum-pare/2021] skip S2A_46REQ_20210329_1_L2A (unusable)
+  [papum-pare/2021] composite ok: 11 scenes, usable px=155592/230400
+  papum-pare/2021: ok in 402s
+  papum-pare/2026: cached composite present, skip fetch
+  jharia/2019: cached composite present, skip fetch
+  [jharia/2021] composite ok: 12 scenes, usable px=129600/129600
+  jharia/2021: ok in 456s
+  jharia/2026: cached composite present, skip fetch
+== Stage 2: labels ==
+  ncr-gurugram: 165411 labelled cells in 6s
+  papum-pare: 200462 labelled cells in 5s
+  jharia: 97023 labelled cells in 3s
+== Stage 3: train/eval ==
+  [model] training cells: 462896
+  [model] spatial-CV acc=0.896 macro-F1=0.819 kappa=0.831
+== Stage 4: predict 2019/2026 ==
+  ncr-gurugram/2019: {'forest': 35992, 'grass_agri': 136760, 'bare': 6749, 'built': 48789, 'water': 1959}
+  ncr-gurugram/2026: {'forest': 70305, 'grass_agri': 107885, 'bare': 6389, 'built': 43064, 'water': 2757}
+  papum-pare/2019: {'forest': 122639, 'grass_agri': 82786, 'bare': 1099, 'built': 11165, 'water': 12692}
+  papum-pare/2026: {'forest': 110323, 'grass_agri': 97614, 'bare': 1763, 'built': 8985, 'water': 11715}
+  jharia/2019: {'forest': 20661, 'grass_agri': 53727, 'bare': 3512, 'built': 45489, 'water': 6211}
+  jharia/2026: {'forest': 54783, 'grass_agri': 29065, 'bare': 4295, 'built': 31339, 'water': 10118}
+== Stage 5: change products ==
+  ncr-gurugram/urban_growth: 1359.4 ha, 127 patches
+  ncr-gurugram/forest_loss: 485.1 ha, 44 patches
+  ncr-gurugram/bare_expansion: 605.8 ha, 52 patches
+  ncr-gurugram/new_water: 706.8 ha, 26 patches
+  ncr-gurugram/water_loss: 218.8 ha, 18 patches
+  papum-pare/urban_growth: 74.1 ha, 9 patches
+  papum-pare/forest_loss: 4324.5 ha, 343 patches
+  papum-pare/bare_expansion: 21.4 ha, 2 patches
+  papum-pare/new_water: 1601.3 ha, 48 patches
+  papum-pare/water_loss: 2096.3 ha, 72 patches
+  jharia/urban_growth: 1049.0 ha, 82 patches
+  jharia/forest_loss: 544.3 ha, 42 patches
+  jharia/new_water: 3384.2 ha, 123 patches
+  jharia/water_loss: 1092.1 ha, 60 patches
+  manifest: 3 AOIs -> api/data/manifest.json
+== done in 1058s ==

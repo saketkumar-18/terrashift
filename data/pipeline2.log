@@ -1,0 +1,32 @@
+== Stage 2: labels ==
+  ncr-gurugram: 165411 labelled cells in 6s
+  papum-pare: 200462 labelled cells in 4s
+  jharia: 97023 labelled cells in 4s
+== Stage 3: train/eval ==
+  [model] training cells: 462896
+  [model] spatial-CV acc=0.876 macro-F1=0.760 kappa=0.800
+== Stage 4: predict 2019/2026 ==
+  ncr-gurugram/2019: {'forest': 87900, 'grass_agri': 50095, 'bare': 70649, 'built': 19258, 'water': 2347}
+  ncr-gurugram/2026: {'forest': 84759, 'grass_agri': 62320, 'bare': 64153, 'built': 16217, 'water': 2951}
+  papum-pare/2019: {'forest': 82147, 'grass_agri': 63600, 'bare': 75436, 'built': 1668, 'water': 7530}
+  papum-pare/2026: {'forest': 70452, 'grass_agri': 68471, 'bare': 83253, 'built': 1782, 'water': 6442}
+  jharia/2019: {'forest': 14819, 'grass_agri': 46746, 'bare': 55486, 'built': 6104, 'water': 6445}
+  jharia/2026: {'forest': 19517, 'grass_agri': 47831, 'bare': 38491, 'built': 15369, 'water': 8392}
+== Stage 5: change products ==
+  ncr-gurugram/urban_growth: 1030.4 ha, 91 patches
+  ncr-gurugram/forest_loss: 5818.4 ha, 458 patches
+  ncr-gurugram/bare_expansion: 1026.5 ha, 115 patches
+  ncr-gurugram/new_water: 628.2 ha, 39 patches
+  ncr-gurugram/water_loss: 284.4 ha, 27 patches
+  papum-pare/urban_growth: 50.4 ha, 6 patches
+  papum-pare/forest_loss: 6184.3 ha, 415 patches
+  papum-pare/bare_expansion: 2817.5 ha, 197 patches
+  papum-pare/new_water: 1960.0 ha, 58 patches
+  papum-pare/water_loss: 2668.6 ha, 83 patches
+  jharia/urban_growth: 4135.6 ha, 198 patches
+  jharia/forest_loss: 1752.3 ha, 119 patches
+  jharia/bare_expansion: 105.0 ha, 13 patches
+  jharia/new_water: 2430.8 ha, 119 patches
+  jharia/water_loss: 805.2 ha, 73 patches
+  manifest: 3 AOIs -> api/data/manifest.json
+== done in 93s ==

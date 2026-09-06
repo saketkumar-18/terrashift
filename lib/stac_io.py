@@ -120,14 +120,28 @@ def search_items(aoi: AOI, epoch_key: str, max_items: int = 12) -> List[dict]:
 # ---------------------------------------------------------------------------
 # Scene window read + cache
 # ---------------------------------------------------------------------------
-def cache_path(aoi_id: str, item_id: str) -> str:
-    h = hashlib.md5(f"{aoi_id}:{item_id}".encode()).hexdigest()[:10]
-    return os.path.join(CACHE_ROOT, f"{aoi_id}__{item_id}__{h}.npz")
+def cache_path(aoi_id: str, item_id: str, collection: str = "") -> str:
+    """Cache key includes the collection (radiometry differs between the
+    e84-legacy and c1 collections) so a radiometry fix invalidates stale
+    entries automatically."""
+    coll_tag = "c1" if collection.endswith("-c1-l2a") else "e84"
+    h = hashlib.md5(f"{aoi_id}:{item_id}:{coll_tag}".encode()).hexdigest()[:10]
+    return os.path.join(CACHE_ROOT, f"{aoi_id}__{item_id}__{coll_tag}_{h}.npz")
 
 
 def _band_specs(item: dict) -> Optional[Dict[str, dict]]:
-    """href + nodata/scale/offset per band, parsed from STAC asset metadata."""
+    """href + nodata/scale/offset per band, parsed from STAC asset metadata.
+
+    RADIOMETRY FIX (validated by QA on raw DN): element84's legacy
+    `sentinel-2-l2a` COGs store UNshifted DN while advertising the
+    processing-baseline offset (-0.1) - applying it makes reflectance ~0.05
+    too low. The official `sentinel-2-c1-l2a` COGs store shifted DN
+    (AOI-wide DN tail ~+870 vs legacy at the same land) and the offset
+    IS correct there. So: apply the advertised offset only for c1 items.
+    """
     assets = item.get("assets", {})
+    coll = (item.get("collection") or "")
+    is_c1 = coll.endswith("-c1-l2a")
     out: Dict[str, dict] = {}
     for band in BANDS:
         a = assets.get(band)
@@ -141,7 +155,7 @@ def _band_specs(item: dict) -> Optional[Dict[str, dict]]:
             "href": a["href"],
             "nodata": float(rb.get("nodata", 0)),
             "scale": float(rb.get("scale", 0.0001)),
-            "offset": float(rb.get("offset", 0.0)),
+            "offset": float(rb.get("offset", 0.0)) if is_c1 else 0.0,
         }
     return out
 
@@ -199,7 +213,7 @@ def read_scene_window(aoi: AOI, item: dict) -> Optional[Dict[str, np.ndarray]]:
 def load_or_fetch(aoi: AOI, item: dict) -> Optional[Dict[str, np.ndarray]]:
     """Disk-cached scene window fetch."""
     ensure_dirs()
-    p = cache_path(aoi.id, item["id"])
+    p = cache_path(aoi.id, item["id"], item.get("collection", ""))
     if os.path.exists(p):
         try:
             z = np.load(p, allow_pickle=False)

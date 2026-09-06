@@ -18,7 +18,6 @@ from fastapi.responses import JSONResponse
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data")
-MODELS = os.path.normpath(os.path.join(HERE, "..", "models"))
 
 app = FastAPI(title="TerraShift API", version="1.0.0")
 app.add_middleware(
@@ -73,4 +72,4 @@ def aoi_product(aoi_id: str, product: str):
 
 @app.get("/api/model")
 def model_metrics():
-    return _read_json(os.path.join(MODELS, "metrics.json"))
+    return _read_json(os.path.join(DATA, "metrics.json"))
