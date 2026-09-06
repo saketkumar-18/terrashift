@@ -1,0 +1,12 @@
+data/
+!api/data/
+models/
+_qa/
+tests/
+.venv/
+lib/
+scripts/
+reports/*.png
+*.log
+.vercel/
+.vercelignore

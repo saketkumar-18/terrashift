@@ -1,0 +1,8 @@
+== Stage 1: composites ==
+C:\Users\devil\Downloads\terrashift\lib\stac_io.py:275: RuntimeWarning: All-NaN slice encountered
+  med = np.nanmedian(np.stack(stack[b]), axis=0)
+  [ncr-gurugram/2019] composite ok: 12 scenes, usable px=230249/230400
+  ncr-gurugram/2019: ok in 4s
+  [ncr-gurugram/2021] skip S2A_43RFM_20210310_2_L2A (unusable)
+  [ncr-gurugram/2021] composite ok: 11 scenes, usable px=230400/230400
+  ncr-gurugram/2021: ok in 114s
