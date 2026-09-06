@@ -5,6 +5,8 @@
 /.venv/
 /lib/
 /scripts/
+/.github/
 *.log
 /.vercel/
-.conftest.py
+/pyproject.toml
+/conftest.py

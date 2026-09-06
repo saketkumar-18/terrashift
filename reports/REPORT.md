@@ -2,7 +2,7 @@
 
 **Project:** Satellite Change Detection over Indian change hotspots (2019 → 2026)
 **Stack:** Sentinel-2 L2A + ESA WorldCover 2021 + RandomForest + FastAPI + MapLibre
-**Live:** https://terrashift.vercel.app · **Repo:** github.com/saketkumar-18/terrashift
+**Live:** https://terrashift-in.vercel.app · **Repo:** github.com/saketkumar-18/terrashift
 
 ## 1. Objective
 

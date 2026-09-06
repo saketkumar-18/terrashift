@@ -1,0 +1,50 @@
+{
+  "aoi": "jharia",
+  "name": "Jharkhand - Jharia coalfield",
+  "focus": "mining",
+  "story": "One of India's largest coalfields; open-cast pit expansion and overburden dumps enlarge bare land at the expense of vegetation and settlements.",
+  "bbox": [
+    86.2,
+    23.65,
+    86.5,
+    23.95
+  ],
+  "epochs": [
+    "2019",
+    "2026"
+  ],
+  "products": [
+    {
+      "key": "urban_growth",
+      "title": "Urban growth",
+      "color": "#ff6b35",
+      "description": "Agriculture/bare land converted to built-up.",
+      "total_ha": 1049.0,
+      "n_patches": 82
+    },
+    {
+      "key": "forest_loss",
+      "title": "Forest loss",
+      "color": "#e63946",
+      "description": "Tree cover replaced by fields, bare land or construction.",
+      "total_ha": 544.3,
+      "n_patches": 42
+    },
+    {
+      "key": "new_water",
+      "title": "New water",
+      "color": "#4cc9f0",
+      "description": "Land became permanent water (reservoirs, subsidence pools).",
+      "total_ha": 3384.2,
+      "n_patches": 123
+    },
+    {
+      "key": "water_loss",
+      "title": "Water loss",
+      "color": "#b5179e",
+      "description": "Water bodies replaced by land (drying, infilling, mining cut).",
+      "total_ha": 1092.1,
+      "n_patches": 60
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 # TerraShift — Satellite Change Detection (2019 → 2026)
 
-**Live:** https://terrashift.vercel.app · Sentinel-2 L2A · Random-forest land-cover classification · change products per AOI
+**Live:** https://terrashift-in.vercel.app · Sentinel-2 L2A · Random-forest land-cover classification · change products per AOI
 
 TerraShift monitors three Indian change hotspots — the Delhi-NCR Gurugram
 urbanisation corridor, Papum Pare (Arunachal Pradesh) forest loss, and the

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TerraShift — Satellite Change Detection (2019–2026)</title>
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0f14; --panel: #121822cc; --line: #1e2836;
+    --tx: #e8eef5; --tx2: #8fa3b8; --acc: #4cc9f0; --acc2: #ff6b35;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--tx);
+         font: 14px/1.45 'Segoe UI', system-ui, sans-serif; overflow: hidden; }
+  #map { position: absolute; inset: 0; }
+  #hud { position: absolute; top: 16px; left: 16px; width: 360px; max-width: calc(100vw - 32px);
+         background: var(--panel); backdrop-filter: blur(14px); border: 1px solid var(--line);
+         border-radius: 14px; padding: 18px; z-index: 10; }
+  h1 { font-size: 19px; letter-spacing: .3px; display: flex; align-items: center; gap: 8px; }
+  h1 .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--acc2);
+            box-shadow: 0 0 10px var(--acc2); }
+  .sub { color: var(--tx2); font-size: 12px; margin: 6px 0 14px; }
+  label { display: block; font-size: 11px; text-transform: uppercase;
+          letter-spacing: 1px; color: var(--tx2); margin: 12px 0 6px; }
+  select { width: 100%; background: #0e141d; color: var(--tx); border: 1px solid var(--line);
+           border-radius: 8px; padding: 9px 10px; font-size: 13px; outline: none; }
+  .story { font-size: 12.5px; color: var(--tx2); margin-top: 8px;
+           border-left: 2px solid var(--acc); padding-left: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { display: flex; align-items: center; gap: 6px; padding: 5px 10px;
+          border: 1px solid var(--line); border-radius: 20px; cursor: pointer;
+          font-size: 12px; color: var(--tx2); user-select: none; transition: all .15s; }
+  .chip.on { color: var(--tx); border-color: var(--acc); background: #4cc9f01a; }
+  .chip .sw { width: 10px; height: 10px; border-radius: 3px; }
+  .stats { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+  .stat-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+  .stat-row b { font-variant-numeric: tabular-nums; }
+  .stat-row .k { display: flex; align-items: center; gap: 7px; }
+  .mini-sw { width: 9px; height: 9px; border-radius: 2.5px; }
+  #metrics { position: absolute; bottom: 16px; left: 16px; z-index: 10;
+             background: var(--panel); backdrop-filter: blur(14px);
+             border: 1px solid var(--line); border-radius: 12px;
+             padding: 10px 14px; font-size: 11.5px; color: var(--tx2); }
+  #metrics b { color: var(--tx); font-variant-numeric: tabular-nums; }
+  #loading { position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 20;
+             background: linear-gradient(90deg, transparent, var(--acc), transparent);
+             background-size: 40% 100%; animation: sweep 1s infinite; display: none; }
+  @keyframes sweep { 0% { background-position: -40% 0; } 100% { background-position: 140% 0; } }
+  .maplibregl-popup-content { background: #121822; color: var(--tx);
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font-size: 13px; }
+  .maplibregl-popup-tip { border-top-color: #121822 !important; }
+  @media (max-width: 640px) { #hud { position: relative; width: 100%; margin: 0; border-radius: 0; } #metrics { display: none; } }
+</style>
+</head>
+<body>
+<div id="loading"></div>
+<div id="map"></div>
+
+<div id="hud">
+  <h1><span class="dot"></span>TerraShift</h1>
+  <div class="sub">Sentinel-2 land-cover change · 2019 → 2026 · 90 m grid · random-forest classifier</div>
+
+  <label for="aoi">Area of interest</label>
+  <select id="aoi"></select>
+  <div class="story" id="story"></div>
+
+  <label>Change products</label>
+  <div class="chips" id="chips"></div>
+
+  <div class="stats" id="stats"></div>
+</div>
+
+<div id="metrics">loading model…</div>
+
+<script>
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    glyphs: 'https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf',
+    sources: {
+      sat: {
+        type: 'raster',
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256, maxzoom: 19, attribution: 'Esri World Imagery'
+      }
+    },
+    layers: [
+      { id: 'bg', type: 'background', paint: { 'background-color': '#0b0f14' } },
+      { id: 'sat', type: 'raster', source: 'sat', paint: { 'raster-opacity': 0.55, 'raster-saturation': -0.4, 'raster-brightness-max': 0.75 } }
+    ]
+  },
+  center: [77.05, 28.35], zoom: 9.6, attributionControl: false
+});
+map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+map.addControl(new maplibregl.AttributionControl({ compact: true }));
+
+let AOIS = [], CURRENT = null, activeProducts = new Set();
+
+async function get(url) {
+  const r = await fetch(url);
+  if (!r.ok) throw new Error(`${url}: ${r.status}`);
+  return r.json();
+}
+
+function showLoading(on) { document.getElementById('loading').style.display = on ? 'block' : 'none'; }
+
+async function init() {
+  showLoading(true);
+  AOIS = await get('/api/aois');
+  const sel = document.getElementById('aoi');
+  for (const a of AOIS) {
+    const o = document.createElement('option');
+    o.value = a.aoi; o.textContent = a.name;
+    sel.appendChild(o);
+  }
+  // chips from first AOI's product list
+  const chips = document.getElementById('chips');
+  const prods = AOIS[0].products || [];
+  const allProducts = ['urban_growth','forest_loss','bare_expansion','new_water','water_loss'];
+  const meta = {
+    urban_growth: ['Urban growth', '#ff6b35'],
+    forest_loss: ['Forest loss', '#e63946'],
+    bare_expansion: ['Bare / mining expansion', '#ffd166'],
+    new_water: ['New water', '#4cc9f0'],
+    water_loss: ['Water loss', '#b5179e'],
+  };
+  for (const p of allProducts) {
+    const c = document.createElement('div');
+    c.className = 'chip'; c.dataset.product = p;
+    c.innerHTML = `<span class="sw" style="background:${meta[p][1]}"></span>${meta[p][0]}`;
+    c.onclick = () => { c.classList.contains('on') ? (activeProducts.delete(p), c.classList.remove('on'))
+                                                    : (activeProducts.add(p), c.classList.add('on')); refreshLayers(); };
+    chips.appendChild(c);
+  }
+  // default: the AOI's focus product
+  sel.onchange = () => selectAoi(sel.value);
+  selectAoi(sel.value);
+  // metrics
+  try {
+    const m = await get('/api/model');
+    document.getElementById('metrics').innerHTML =
+      `RF land-cover · spatial-block 5-fold CV · accuracy <b>${(m.cv_accuracy*100).toFixed(1)}%</b>` +
+      ` · macro-F1 <b>${m.cv_macro_f1.toFixed(3)}</b> · κ <b>${m.cv_kappa.toFixed(3)}</b>` +
+      ` · n=<b>${m.n_train.toLocaleString()}</b> cells`;
+  } catch (e) {
+    document.getElementById('metrics').textContent = 'model metrics unavailable';
+  }
+  showLoading(false);
+}
+
+async function selectAoi(aoiId) {
+  showLoading(true);
+  CURRENT = AOIS.find(a => a.aoi === aoiId);
+  document.getElementById('story').textContent = CURRENT.story;
+  // fly to
+  const [w, s, e, n] = CURRENT.bbox;
+  map.fitBounds([[w, s], [e, n]], { padding: 60, duration: 1200 });
+  // turn on the focus product if nothing active
+  const chips = document.querySelectorAll('.chip');
+  if (activeProducts.size === 0) {
+    const focusMap = { 'urban-growth': 'urban_growth', 'forest-loss': 'forest_loss', 'mining': 'bare_expansion' };
+    const fp = focusMap[CURRENT.focus] || 'urban_growth';
+    activeProducts.add(fp);
+    chips.forEach(c => c.classList.toggle('on', c.dataset.product === fp));
+  }
+  await refreshLayers();
+  showLoading(false);
+}
+
+async function refreshLayers() {
+  // remove old layers/sources
+  for (const key of document.querySelectorAll('.chip')) {
+    const k = key.dataset.product;
+    if (map.getLayer('lyr-' + k)) map.removeLayer('lyr-' + k);
+    if (map.getLayer('outline-' + k)) map.removeLayer('outline-' + k);
+    if (map.getSource('src-' + k)) map.removeSource('src-' + k);
+  }
+  const statsEl = document.getElementById('stats');
+  const rows = [];
+  for (const key of activeProducts) {
+    try {
+      const gj = await get(`/api/aois/${CURRENT.aoi}/${key}.geojson`);
+      map.addSource('src-' + key, { type: 'geojson', data: gj });
+      const color = (CURRENT.products.find(p => p.key === key) || {}).color || '#ffffff';
+      map.addLayer({
+        id: 'lyr-' + key, type: 'fill', source: 'src-' + key,
+        paint: { 'fill-color': color, 'fill-opacity': 0.45 }
+      });
+      map.addLayer({
+        id: 'outline-' + key, type: 'line', source: 'src-' + key,
+        paint: { 'line-color': color, 'line-width': 1.2, 'line-opacity': 0.9 }
+      });
+      map.on('click', 'lyr-' + key, onLayerClick(key));
+      const meta = CURRENT.products.find(p => p.key === key);
+      if (meta) rows.push(`<div class="stat-row"><span class="k">
+        <span class="mini-sw" style="background:${color}"></span>${meta.title}</span>
+        <b>${meta.total_ha.toLocaleString()} ha · ${meta.n_patches} patches</b></div>`);
+    } catch (e) { /* product absent for this AOI */ }
+  }
+  statsEl.innerHTML = rows.join('') ||
+    '<div class="stat-row"><span class="k">no products selected</span></div>';
+}
+
+let clickHandlers = {};
+function onLayerClick(key) {
+  if (!clickHandlers[key]) {
+    clickHandlers[key] = e => {
+      const f = e.features[0];
+      const meta = CURRENT && CURRENT.products.find(p => p.key === key);
+      new maplibregl.Popup()
+        .setLngLat(e.lngLat)
+        .setHTML(`<b>${(meta && meta.title) || key}</b><br>${f.properties.area_ha} ha patch`)
+        .addTo(map);
+    };
+  }
+  return clickHandlers[key];
+}
+
+init().catch(e => {
+  document.getElementById('story').textContent = 'failed to load: ' + e.message;
+});
+</script>
+</body>
+</html>
