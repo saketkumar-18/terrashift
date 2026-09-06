@@ -10,3 +10,4 @@ _qa/
 node_modules/
 *.egg-info/
 .DS_Store
+models/*.joblib
