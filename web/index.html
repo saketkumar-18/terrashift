@@ -98,6 +98,20 @@ map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-ri
 map.addControl(new maplibregl.AttributionControl({ compact: true }));
 
 let AOIS = [], CURRENT = null, activeProducts = new Set();
+let refreshToken = 0;  // stale-guard: only the latest refresh may mutate
+
+function styleReady() {
+  // style 'load' can lag behind page load when raster tiles are slow;
+  // addSource/addLayer throw "Style is not done loading" until then.
+  return new Promise(resolve => {
+    if (map.isStyleLoaded()) return resolve();
+    map.once('load', () => resolve());
+    const poll = setInterval(() => {
+      if (map.isStyleLoaded()) { clearInterval(poll); resolve(); }
+    }, 400);
+    setTimeout(() => { clearInterval(poll); resolve(); }, 20000); // give up eventually
+  });
+}
 
 async function get(url) {
   const r = await fetch(url);
@@ -109,6 +123,7 @@ function showLoading(on) { document.getElementById('loading').style.display = on
 
 async function init() {
   showLoading(true);
+  await styleReady();
   AOIS = await get('/api/aois');
   const sel = document.getElementById('aoi');
   for (const a of AOIS) {
@@ -155,22 +170,26 @@ async function selectAoi(aoiId) {
   showLoading(true);
   CURRENT = AOIS.find(a => a.aoi === aoiId);
   document.getElementById('story').textContent = CURRENT.story;
-  // fly to
   const [w, s, e, n] = CURRENT.bbox;
   map.fitBounds([[w, s], [e, n]], { padding: 60, duration: 1200 });
-  // turn on the focus product if nothing active
-  const chips = document.querySelectorAll('.chip');
-  if (activeProducts.size === 0) {
-    const focusMap = { 'urban-growth': 'urban_growth', 'forest-loss': 'forest_loss', 'mining': 'bare_expansion' };
-    const fp = focusMap[CURRENT.focus] || 'urban_growth';
-    activeProducts.add(fp);
-    chips.forEach(c => c.classList.toggle('on', c.dataset.product === fp));
-  }
+  // reset chips to THIS AOI's focus product on every switch
+  const focusMap = { 'urban-growth': 'urban_growth', 'forest-loss': 'forest_loss', 'mining': 'bare_expansion' };
+  const avail = new Set(CURRENT.products.map(p => p.key));
+  const pref = [focusMap[CURRENT.focus], 'urban_growth', 'forest_loss',
+                'new_water', 'bare_expansion'].filter(Boolean);
+  const fp = pref.find(k => avail.has(k)) ||
+             (CURRENT.products[0] || {}).key || 'urban_growth';
+  activeProducts = new Set([fp]);
+  document.querySelectorAll('.chip').forEach(c =>
+    c.classList.toggle('on', c.dataset.product === fp));
   await refreshLayers();
   showLoading(false);
 }
 
 async function refreshLayers() {
+  const token = ++refreshToken;  // supersede any in-flight refresh
+  await styleReady();
+  if (token !== refreshToken) return;
   // remove old layers/sources
   for (const key of document.querySelectorAll('.chip')) {
     const k = key.dataset.product;
@@ -180,9 +199,10 @@ async function refreshLayers() {
   }
   const statsEl = document.getElementById('stats');
   const rows = [];
-  for (const key of activeProducts) {
+  for (const key of [...activeProducts]) {
     try {
       const gj = await get(`/api/aois/${CURRENT.aoi}/${key}.geojson`);
+      if (token !== refreshToken) return;  // stale: a newer refresh took over
       map.addSource('src-' + key, { type: 'geojson', data: gj });
       const color = (CURRENT.products.find(p => p.key === key) || {}).color || '#ffffff';
       map.addLayer({
@@ -198,8 +218,11 @@ async function refreshLayers() {
       if (meta) rows.push(`<div class="stat-row"><span class="k">
         <span class="mini-sw" style="background:${color}"></span>${meta.title}</span>
         <b>${meta.total_ha.toLocaleString()} ha · ${meta.n_patches} patches</b></div>`);
-    } catch (e) { /* product absent for this AOI */ }
+    } catch (e) {
+      console.warn('product layer failed:', key, e);
+    }
   }
+  if (token !== refreshToken) return;
   statsEl.innerHTML = rows.join('') ||
     '<div class="stat-row"><span class="k">no products selected</span></div>';
 }
