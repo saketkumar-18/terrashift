@@ -21,3 +21,5 @@ twa/build2.log
 twa/app-release-bundle.aab
 *.apk
 twa/
+twa/
+*.apk
