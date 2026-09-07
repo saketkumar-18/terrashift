@@ -13,3 +13,10 @@ node_modules/
 models/*.joblib
 _vercel/
 uv.lock
+twa/app/build/
+twa/.gradle/
+twa/build.log
+twa/update.log
+twa/build2.log
+twa/app-release-bundle.aab
+*.apk

@@ -4,6 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TerraShift — Satellite Change Detection (2019–2026)</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#0b0f14">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TerraShift">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
 <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
 <style>
@@ -52,6 +58,10 @@
     border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font-size: 13px; }
   .maplibregl-popup-tip { border-top-color: #121822 !important; }
   @media (max-width: 640px) { #hud { position: relative; width: 100%; margin: 0; border-radius: 0; } #metrics { display: none; } }
+  #installBtn { width: 100%; margin-top: 12px; padding: 10px; border: 1px solid var(--acc);
+                background: #4cc9f01a; color: var(--acc); border-radius: 9px;
+                font-size: 13px; cursor: pointer; }
+  #iosHint { display: none; margin-top: 8px; font-size: 11.5px; color: var(--tx2); }
 </style>
 </head>
 <body>
@@ -70,6 +80,9 @@
   <div class="chips" id="chips"></div>
 
   <div class="stats" id="stats"></div>
+
+  <button id="installBtn" style="display:none">⬇ Install app</button>
+  <span id="iosHint" style="display:none">On iOS: Share → Add to Home Screen</span>
 </div>
 
 <div id="metrics">loading model…</div>
@@ -245,6 +258,28 @@ function onLayerClick(key) {
 init().catch(e => {
   document.getElementById('story').textContent = 'failed to load: ' + e.message;
 });
+
+// ---- PWA: install prompt + service worker ----
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  const b = document.getElementById('installBtn');
+  b.style.display = 'block';
+  b.onclick = async () => {
+    b.style.display = 'none';
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+  };
+});
+const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) &&
+  !/crios|fxios/i.test(navigator.userAgent);
+if (isIOS) document.getElementById('iosHint').style.display = 'block';
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () =>
+    navigator.serviceWorker.register('/sw.js').catch(() => {}));
+}
 </script>
 </body>
 </html>

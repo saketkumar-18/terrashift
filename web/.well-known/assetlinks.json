@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.saketkumar.terrashift",
+    "sha256_cert_fingerprints": [
+      "33:85:EF:60:ED:7E:38:34:09:45:7F:BA:02:8D:D0:FB:E1:2F:19:DC:FD:C4:4D:E8:7A:BD:B2:62:6C:DB:D5:92"
+    ]
+  }
+}]
