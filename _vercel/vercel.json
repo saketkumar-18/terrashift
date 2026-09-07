@@ -1,6 +1,0 @@
-{
-  "outputDirectory": "web",
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" }
-  ]
-}

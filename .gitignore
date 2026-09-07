@@ -11,5 +11,5 @@ node_modules/
 *.egg-info/
 .DS_Store
 models/*.joblib
-
-.vercel
+_vercel/
+uv.lock
